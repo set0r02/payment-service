@@ -2,5 +2,7 @@ spring:
   application:
     name: paymentservice
 
-  mongodb:
-    uri: ${MONGO_DB_URI}
+  data:
+    mongodb:
+      uri: ${MONGO_DB_URI}
+      database: ${MONGO_DB_NAME}
