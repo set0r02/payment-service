@@ -21,6 +21,8 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
+    implementation 'io.mongock:mongock-springboot-v3:5.5.0'
+    implementation 'io.mongock:mongodb-springdata-v4-driver:5.5.0'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
