@@ -1,39 +1,38 @@
 package com.innowise.paymentservice.model;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Getter
-@Setter
+@Document(collection = "payments")
 public class Payment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id",nullable = false)
+    @Field(name = "id")
     private Long id;
 
-    @Column(name = "order_id",nullable = false)
-    private Long order_id;
+    @Field(name = "order_id")
+    private Long orderId;
 
-    @Column(name = "user_id",nullable = false)
-    private Long user_id;
+    @Field(name = "user_id")
+    private Long userId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status",nullable = false)
+    @Field(name = "status")
     private Status status;
 
-    @Column(name = "timestamp",nullable = false)
+    @Field(name = "timestamp")
     private LocalDateTime timestamp;
 
-    @Column(name = "payment_amount",nullable = false)
+    @Field(name = "payment_amount")
     private BigDecimal paymentAmount;
 
 }

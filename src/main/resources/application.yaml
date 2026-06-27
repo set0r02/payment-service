@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: paymentservice
+
+  mongodb:
+    uri: ${MONGO_DB_URI}
