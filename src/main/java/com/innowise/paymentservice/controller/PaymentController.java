@@ -50,10 +50,7 @@
         ){
 
             Long currentUserId = Long.valueOf(jwt.getSubject());
-
-            Long effectiveUserId = (userId != null)
-                    ? userId
-                    : currentUserId;
+            Long effectiveUserId = (userId != null) ? userId : currentUserId;
 
             return ResponseEntity.ok(paymentService.findPayments(orderId, status, effectiveUserId)
             );
