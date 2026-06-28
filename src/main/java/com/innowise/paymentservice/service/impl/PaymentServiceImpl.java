@@ -14,10 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.chrono.ChronoLocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -55,23 +52,15 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public List<PaymentOutputDto> findPayments(Long orderId, String status, Long userId) {
 
-        Status paymentStatus = status != null ? Status.valueOf(status) : null;
+        Status paymentStatus = status != null
+                ? Status.valueOf(status)
+                : null;
 
-        List<Payment> payments;
-
-        if (userId != null && orderId != null && paymentStatus != null) {
-            payments = paymentRepository.findByUserIdAndOrderIdAndStatus(userId, orderId, paymentStatus);
-
-        } else if (userId != null) {
-            payments = paymentRepository.findByUserId(userId);
-
-        } else {
-            payments = paymentRepository.findAll();
-        }
-
-        return payments.stream()
+        return paymentRepository.findPayments(userId, orderId, paymentStatus)
+                .stream()
                 .map(paymentMapper::toDto)
                 .toList();
+
     }
 
     @Override
