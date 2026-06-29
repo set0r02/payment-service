@@ -1,11 +1,13 @@
+server:
+  port: 8084
+
 spring:
   application:
     name: paymentservice
 
   data:
     mongodb:
-      uri: ${MONGO_DB_URI}
-      database: ${MONGO_DB_NAME}
+      uri: ${MONGO_DB_URI:mongodb://localhost:27017/paymentdb}
 
   kafka:
     bootstrap-servers: ${BOOTSTRAP_SERVICES:localhost:9092}

@@ -1,0 +1,33 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: paymentservice
+
+  data:
+    mongodb:
+      uri: ${MONGO_DB_URI:mongodb://mongo:27017/paymentdb}
+
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVICES:kafka:9092}
+    consumer:
+      group-id: payment-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.innowise.*"
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+app:
+  random-number: ${RANDOM_NUMBER:https://www.random.org/integers/?num=1&min=1&max=100&col=1&base=10&format=plain}
+
+  kafka:
+    topics:
+      payment-events: payment-events
+
+jwt:
+  secret: ${JWT_SECRET}
