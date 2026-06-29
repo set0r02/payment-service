@@ -22,11 +22,11 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
 
         Query query = new Query();
         if (userId != null) {
-            query.addCriteria(Criteria.where("userId").is(userId));
+            query.addCriteria(Criteria.where("user_Id").is(userId));
         }
 
         if (orderId != null) {
-            query.addCriteria(Criteria.where("orderId").is(orderId));
+            query.addCriteria(Criteria.where("order_Id").is(orderId));
         }
 
         if (status != null) {

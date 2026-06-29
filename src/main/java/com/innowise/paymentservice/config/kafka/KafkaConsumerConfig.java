@@ -30,7 +30,7 @@ public class KafkaConsumerConfig {
 
         Map<String, Object> config = new HashMap<>();
 
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.kafkaServers());
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.bootstrapServers());
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "payment-service-group");
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 

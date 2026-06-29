@@ -10,6 +10,7 @@ import com.innowise.paymentservice.model.Status;
 import com.innowise.paymentservice.repository.PaymentRepository;
 import com.innowise.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,13 +51,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<PaymentOutputDto> findPayments(Long orderId, String status, Long userId) {
+    public List<PaymentOutputDto> findPayments(Long orderId, Status status, Long userId) {
 
-        Status paymentStatus = status != null
-                ? Status.valueOf(status)
-                : null;
-
-        return paymentRepository.findPayments(userId, orderId, paymentStatus)
+        return paymentRepository.findPayments(userId, orderId, status)
                 .stream()
                 .map(paymentMapper::toDto)
                 .toList();

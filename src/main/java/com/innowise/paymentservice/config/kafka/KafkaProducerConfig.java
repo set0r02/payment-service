@@ -25,7 +25,7 @@ public class KafkaProducerConfig {
     public ProducerFactory<String, PaymentCompletedEvent> producerFactory(){
         Map<String, Object> configProperties = new HashMap<>();
 
-        configProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.kafkaServers());
+        configProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.bootstrapServers());
         configProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 

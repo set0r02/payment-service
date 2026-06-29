@@ -3,9 +3,11 @@
     import com.innowise.paymentservice.dto.PaymentSummaryResponse;
     import com.innowise.paymentservice.dto.input.PaymentInputDto;
     import com.innowise.paymentservice.dto.output.PaymentOutputDto;
+    import com.innowise.paymentservice.model.Status;
     import com.innowise.paymentservice.service.PaymentService;
     import jakarta.validation.Valid;
     import lombok.RequiredArgsConstructor;
+    import org.springframework.format.annotation.DateTimeFormat;
     import org.springframework.http.HttpStatus;
     import org.springframework.http.ResponseEntity;
     import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,24 +46,26 @@
         @PreAuthorize("hasAnyRole('USER','ADMIN')")
         public ResponseEntity<List<PaymentOutputDto>> findPayments(
                 @RequestParam(required = false) Long orderId,
-                @RequestParam(required = false) String status,
-                @RequestParam(required = false) Long userId,
+                @RequestParam(required = false) Status status,
                 @AuthenticationPrincipal Jwt jwt
         ){
 
-            Long currentUserId = Long.valueOf(jwt.getSubject());
-            Long effectiveUserId = (userId != null) ? userId : currentUserId;
+            Long userId = Long.valueOf(jwt.getSubject());
+            boolean isAdmin = jwt.getClaimAsStringList("role") != null &&
+                    jwt.getClaimAsStringList("role").contains("ADMIN");
+
+            Long effectiveUserId = isAdmin ? null : userId;
 
             return ResponseEntity.ok(paymentService.findPayments(orderId, status, effectiveUserId)
             );
         }
 
         @GetMapping("/users/{userId}/summary")
-        @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isOwnerUser(#userId, authentication.principal.subject)")
+        @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isOwner(#userId, authentication.principal.subject)")
         public ResponseEntity<PaymentSummaryResponse> getUserSummary(
                 @PathVariable Long userId,
-                @RequestParam LocalDateTime from,
-                @RequestParam LocalDateTime to
+                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
                 ){
 
             return ResponseEntity.ok(
@@ -72,8 +76,8 @@
         @GetMapping("/summary")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<PaymentSummaryResponse> getGlobalSummary(
-                @RequestParam LocalDateTime from,
-                @RequestParam LocalDateTime to){
+                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to){
             return ResponseEntity.ok(paymentService.getGlobalSummary(from,to));
 
         }
