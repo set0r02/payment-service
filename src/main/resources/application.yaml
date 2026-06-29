@@ -8,7 +8,7 @@ spring:
       database: ${MONGO_DB_NAME}
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${BOOTSTRAP_SERVICES:localhost:9092}
     consumer:
       group-id: payment-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -22,3 +22,7 @@ spring:
 
 app:
   random-number: ${RANDOM_NUMBER:https://www.random.org/integers/?num=1&min=1&max=100&col=1&base=10&format=plain}
+
+  kafka:
+    topics:
+      payment-events: payment-events

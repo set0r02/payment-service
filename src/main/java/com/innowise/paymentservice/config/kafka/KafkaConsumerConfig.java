@@ -1,10 +1,10 @@
 package com.innowise.paymentservice.config.kafka;
 
+import com.innowise.paymentservice.config.kafka.properties.KafkaProperties;
 import com.innowise.paymentservice.dto.event.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;

@@ -1,4 +1,4 @@
-package com.innowise.paymentservice.config.kafka;
+package com.innowise.paymentservice.config.kafka.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

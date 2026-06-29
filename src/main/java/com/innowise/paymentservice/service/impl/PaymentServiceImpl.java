@@ -1,6 +1,9 @@
 package com.innowise.paymentservice.service.impl;
 
+import com.innowise.paymentservice.client.RandomNumberClient;
+import com.innowise.paymentservice.config.kafka.properties.KafkaTopicsProperties;
 import com.innowise.paymentservice.dto.PaymentSummaryResponse;
+import com.innowise.paymentservice.dto.event.PaymentCompletedEvent;
 import com.innowise.paymentservice.dto.input.PaymentInputDto;
 import com.innowise.paymentservice.dto.output.PaymentOutputDto;
 import com.innowise.paymentservice.exception.NotFoundException;
@@ -16,14 +19,13 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @Transactional
@@ -33,6 +35,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
     private final MongoTemplate mongoTemplate;
+    private final KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
+    private final KafkaTopicsProperties kafkaTopicsProperties;
+    private final RandomNumberClient randomNumberClient;
 
     @Override
     public PaymentOutputDto createPayment(PaymentInputDto paymentInputDto, Long userId) {
@@ -45,9 +50,22 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentAmount(paymentInputDto.paymentAmount())
                 .build();
 
-        Payment savePayment = paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
 
-        return paymentMapper.toDto(savePayment);
+        Status newStatus = processPayment();
+        savedPayment.setStatus(newStatus);
+        savedPayment.setTimestamp(LocalDateTime.now());
+
+        Payment updatedPayment = paymentRepository.save(savedPayment);
+
+        PaymentCompletedEvent paymentCompletedEvent = new PaymentCompletedEvent(
+                updatedPayment.getOrderId(),
+                updatedPayment.getStatus().name()
+        );
+
+        kafkaTemplate.send(kafkaTopicsProperties.paymentEvents(),paymentCompletedEvent);
+
+        return paymentMapper.toDto(updatedPayment);
     }
 
     @Override
@@ -74,12 +92,12 @@ public class PaymentServiceImpl implements PaymentService {
 
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(
-                        Criteria.where("user_id").is(userId)
+                        Criteria.where("userId").is(userId)
                         .and("status").is(Status.SUCCESS)
                         .and("timestamp").gte(from).lte(to)
                 ),
 
-                Aggregation.group().sum("payment_amount").as("total")
+                Aggregation.group().sum("paymentAmount").as("total")
         );
 
         return getPaymentSummaryResponse(aggregation);
@@ -94,7 +112,7 @@ public class PaymentServiceImpl implements PaymentService {
                                 .and("timestamp").gte(from).lte(to)
                 ),
 
-                Aggregation.group().sum("payment_amount").as("total")
+                Aggregation.group().sum("paymentAmount").as("total")
         );
 
         return getPaymentSummaryResponse(aggregation);
@@ -132,6 +150,13 @@ public class PaymentServiceImpl implements PaymentService {
         return mongoTemplate.find(query, Payment.class);
     }
 
+    private Status processPayment() {
 
+        int number = Integer.parseInt(randomNumberClient.getRandomNumber().trim());
+
+        return (number % 2 == 0)
+                ? Status.SUCCESS
+                : Status.FAILED;
+    }
 
 }
