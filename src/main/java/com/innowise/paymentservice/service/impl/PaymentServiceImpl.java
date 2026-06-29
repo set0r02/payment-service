@@ -10,6 +10,12 @@ import com.innowise.paymentservice.model.Status;
 import com.innowise.paymentservice.repository.PaymentRepository;
 import com.innowise.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.bson.Document;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final MongoTemplate mongoTemplate;
 
     @Override
     public PaymentOutputDto createPayment(PaymentInputDto paymentInputDto, Long userId) {
@@ -39,6 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         Payment savePayment = paymentRepository.save(payment);
+
         return paymentMapper.toDto(savePayment);
     }
 
@@ -47,13 +55,14 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(id).orElseThrow(
                 () -> new NotFoundException("Payment with this id " + id + " not found")
         );
+
         return paymentMapper.toDto(payment);
     }
 
     @Override
     public List<PaymentOutputDto> findPayments(Long orderId, Status status, Long userId) {
 
-        return paymentRepository.findPayments(userId, orderId, status)
+        return findPaymentWithCriteria(userId, orderId, status)
                 .stream()
                 .map(paymentMapper::toDto)
                 .toList();
@@ -63,31 +72,66 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentSummaryResponse getUserSummary(Long userId, LocalDateTime from, LocalDateTime to) {
 
-        List<Payment> payments =
-                paymentRepository.findSuccessfulPaymentsForUser(userId, from, to);
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(
+                        Criteria.where("user_id").is(userId)
+                        .and("status").is(Status.SUCCESS)
+                        .and("timestamp").gte(from).lte(to)
+                ),
 
-        BigDecimal total = payments.stream()
-                .map(Payment::getPaymentAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                Aggregation.group().sum("payment_amount").as("total")
+        );
 
-        return new PaymentSummaryResponse(total);
+        return getPaymentSummaryResponse(aggregation);
     }
-
     @Override
-    public PaymentSummaryResponse getGlobalSummary(LocalDateTime from, LocalDateTime to) {
+    public PaymentSummaryResponse  getGlobalSummary(LocalDateTime from,
+                                               LocalDateTime to) {
 
-        List<Payment> payments =
-                paymentRepository.findSuccessfulPaymentsOverall(from, to);
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(
+                        Criteria.where("status").is(Status.SUCCESS)
+                                .and("timestamp").gte(from).lte(to)
+                ),
 
-        BigDecimal total = payments.stream()
-                .map(Payment::getPaymentAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                Aggregation.group().sum("payment_amount").as("total")
+        );
+
+        return getPaymentSummaryResponse(aggregation);
+    }
+
+    private PaymentSummaryResponse getPaymentSummaryResponse(Aggregation aggregation) {
+        AggregationResults<Document> result =
+                mongoTemplate.aggregate(aggregation, "payments", Document.class);
+
+        Document doc = result.getUniqueMappedResult();
+
+        BigDecimal total = (doc == null || doc.get("total") == null)
+                ? BigDecimal.ZERO
+                : new BigDecimal(doc.get("total").toString());
 
         return new PaymentSummaryResponse(total);
-
     }
+
+    private List<Payment> findPaymentWithCriteria(Long userId, Long orderId, Status status) {
+
+        Query query = new Query();
+
+        if (userId != null) {
+            query.addCriteria(Criteria.where("user_id").is(userId));
+        }
+
+        if (orderId != null) {
+            query.addCriteria(Criteria.where("order_id").is(orderId));
+        }
+
+        if (status != null) {
+            query.addCriteria(Criteria.where("status").is(status));
+        }
+
+        return mongoTemplate.find(query, Payment.class);
+    }
+
 
 
 }

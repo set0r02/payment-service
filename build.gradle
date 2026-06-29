@@ -4,6 +4,12 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.1.0"
+    }
+}
+
 group = 'org.innowise'
 version = '1.0-SNAPSHOT'
 
@@ -19,6 +25,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-json'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 

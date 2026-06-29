@@ -26,7 +26,7 @@ public class PaymentChangeLogInitialization {
                 .createIndex(new Index("status",Sort.Direction.ASC));
 
         mongoTemplate.indexOps("payments")
-                .createIndex(new Index().on("timestamp", Sort.Direction.ASC));
+                .createIndex(new Index("timestamp",Sort.Direction.ASC));
     }
 
     @RollbackExecution
