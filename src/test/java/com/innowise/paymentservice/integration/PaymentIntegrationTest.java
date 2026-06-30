@@ -85,13 +85,12 @@ class PaymentIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void createPaymentTest() throws Exception {
 
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .claim("sub", "1")
-                .claim("role", List.of("USER"))
+                .claim("role", "ROLE_USER")
                 .build();
 
 
@@ -110,11 +109,16 @@ class PaymentIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void findByIdTest() throws Exception {
 
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("1")
+                .claim("role", "ROLE_ADMIN")
+                .build();
+
         MvcResult result = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
-                        .with(jwt().jwt(j -> j.subject("1")))
+                        .with(jwt().jwt(jwt))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                     {
@@ -129,40 +133,51 @@ class PaymentIntegrationTest {
 
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/" + id)
-                .with(jwt().jwt(j -> j.subject("1"))))
+                        .with(jwt().jwt(jwt)))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void findPaymentsTest() throws Exception {
 
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .claim("sub", "1")
-                .claim("role", List.of("USER"))
+                .claim("role", "ROLE_USER")
                 .build();
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)))
+                        .with(jwt().jwt(jwt)))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void userSummaryTest() throws Exception {
 
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("1")
+                .claim("role", "ROLE_ADMIN")
+                .build();
+
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/users/1/summary")
+                        .with(jwt().jwt(jwt))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void globalSummaryTest() throws Exception {
 
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("1")
+                .claim("role", "ROLE_ADMIN")
+                .build();
+
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/summary")
+                        .with(jwt().jwt(jwt))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
