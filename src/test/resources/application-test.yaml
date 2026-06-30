@@ -1,17 +1,6 @@
 app:
   random-number: http://localhost:9561/random
 
-spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
-
-kafka:
-  listener:
-    auto-startup: false
-
 logging:
   level:
     org.springframework.web: TRACE

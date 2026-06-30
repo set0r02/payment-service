@@ -17,6 +17,7 @@ import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -92,18 +93,21 @@ public class PaymentServiceImpl implements PaymentService {
 
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(
-                        Criteria.where("userId").is(userId)
+                        Criteria.where("user_id").is(userId)
                         .and("status").is(Status.SUCCESS)
                         .and("timestamp").gte(from).lte(to)
                 ),
-
-                Aggregation.group().sum("paymentAmount").as("total")
+                Aggregation.addFields()
+                        .addFieldWithValue("payment_amount_decimal",
+                                ConvertOperators.Convert.convertValue("$payment_amount").to("double"))
+                        .build(),
+                Aggregation.group().sum("payment_amount_decimal").as("total")
         );
 
         return getPaymentSummaryResponse(aggregation);
     }
     @Override
-    public PaymentSummaryResponse  getGlobalSummary(LocalDateTime from,
+    public PaymentSummaryResponse getGlobalSummary(LocalDateTime from,
                                                LocalDateTime to) {
 
         Aggregation aggregation = Aggregation.newAggregation(
@@ -111,9 +115,13 @@ public class PaymentServiceImpl implements PaymentService {
                         Criteria.where("status").is(Status.SUCCESS)
                                 .and("timestamp").gte(from).lte(to)
                 ),
-
-                Aggregation.group().sum("paymentAmount").as("total")
+                Aggregation.addFields()
+                        .addFieldWithValue("payment_amount_decimal",
+                                ConvertOperators.Convert.convertValue("$payment_amount").to("decimal"))
+                        .build(),
+                Aggregation.group().sum("payment_amount_decimal").as("total")
         );
+
 
         return getPaymentSummaryResponse(aggregation);
     }
