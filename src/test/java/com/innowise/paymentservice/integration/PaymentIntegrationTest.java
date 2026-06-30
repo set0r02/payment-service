@@ -77,17 +77,6 @@ class PaymentIntegrationTest {
     @BeforeEach
     void setUp() {
 
-        await()
-                .atMost(30, TimeUnit.SECONDS)
-                .until(() -> {
-                    try {
-                        mongoTemplate.getCollectionNames();
-                        return true;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                });
-
         mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
 
         mockMvc = MockMvcBuilders
