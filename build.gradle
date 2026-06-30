@@ -9,6 +9,9 @@ dependencyManagement {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.1.0"
     }
 }
+test {
+    systemProperty "testcontainers.reuse.enable", "true"
+}
 
 group = 'org.innowise'
 version = '1.0-SNAPSHOT'

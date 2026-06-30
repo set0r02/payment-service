@@ -20,7 +20,8 @@ jobs:
         options: --privileged
 
     env:
-      TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
+      TESTCONTAINERS_RYUK_DISABLED: false
+      TESTCONTAINERS_CHECKS_DISABLE: true
       DOCKER_HOST: unix:///var/run/docker.sock
 
     steps:
