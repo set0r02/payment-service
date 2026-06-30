@@ -41,8 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 class PaymentIntegrationTest {
 
     @Container
-    static MongoDBContainer mongo = new MongoDBContainer("mongo:7")
-            .waitingFor(org.testcontainers.containers.wait.strategy.Wait.forListeningPort());;
+    static MongoDBContainer mongo = new MongoDBContainer("mongo:7").withExposedPorts(27017);
 
     static WireMockServer wireMockServer;
 
@@ -63,6 +62,12 @@ class PaymentIntegrationTest {
         wireMockServer = new WireMockServer(8089);
         wireMockServer.start();
         configureFor("localhost", 8089);
+    }
+
+    @BeforeAll
+    static void debug() {
+        System.out.println("MONGO RUNNING = " + mongo.isRunning());
+        System.out.println("MONGO URI = " + mongo.getReplicaSetUrl());
     }
 
     @AfterEach
@@ -145,6 +150,8 @@ class PaymentIntegrationTest {
                     """))
                 .andReturn();
 
+
+        System.out.println("CREATE RESPONSE: " + result.getResponse().getContentAsString());
         String body = result.getResponse().getContentAsString();
         String id = JsonPath.read(body, "$.id");
 
