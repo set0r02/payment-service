@@ -1,4 +1,4 @@
-package unit;
+package com.innowise.paymentservice.unit;
 
 import com.innowise.paymentservice.client.RandomNumberClient;
 import com.innowise.paymentservice.config.kafka.properties.KafkaTopicsProperties;
@@ -91,15 +91,15 @@ public class PaymentServiceTest {
     @Test
     void findById() {
 
-        Payment payment = Payment.builder().id(1L).build();
+        Payment payment = Payment.builder().id("1").build();
 
-        when(paymentRepository.findById(1L))
+        when(paymentRepository.findById("1"))
                 .thenReturn(Optional.of(payment));
 
         when(paymentMapper.toDto(payment))
                 .thenReturn(mock(PaymentOutputDto.class));
 
-        var result = paymentService.findById(1L);
+        var result = paymentService.findById("1");
 
         assertNotNull(result);
     }
@@ -108,7 +108,7 @@ public class PaymentServiceTest {
     void findPayments() {
 
         Payment payment = Payment.builder()
-                .id(1L)
+                .id("1")
                 .userId(1L)
                 .orderId(1L)
                 .status(Status.SUCCESS)

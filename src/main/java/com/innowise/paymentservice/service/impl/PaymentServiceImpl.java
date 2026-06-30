@@ -69,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentOutputDto findById(Long id) {
+    public PaymentOutputDto findById(String id) {
         Payment payment = paymentRepository.findById(id).orElseThrow(
                 () -> new NotFoundException("Payment with this id " + id + " not found")
         );

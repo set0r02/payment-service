@@ -12,7 +12,7 @@ public interface PaymentService {
 
     PaymentOutputDto createPayment(PaymentInputDto paymentInputDto, Long userId);
 
-    PaymentOutputDto findById(Long id);
+    PaymentOutputDto findById(String id);
 
     List<PaymentOutputDto> findPayments(Long orderId, Status status, Long userId);
 

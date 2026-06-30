@@ -18,7 +18,7 @@ public class Payment {
 
     @Id
     @Field(name = "id")
-    private Long id;
+    private String id;
 
     @Field(name = "order_id")
     private Long orderId;

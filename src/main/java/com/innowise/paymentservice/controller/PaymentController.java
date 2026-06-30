@@ -15,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -39,7 +41,7 @@ public class PaymentController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isOwner(#id, authentication.principal.subject)")
-    public ResponseEntity<PaymentOutputDto> findById(@PathVariable Long id) {
+    public ResponseEntity<PaymentOutputDto> findById(@PathVariable String id) {
         return ResponseEntity.ok(paymentService.findById(id));
     }
 

@@ -10,7 +10,7 @@
 
         private final PaymentRepository paymentRepository;
 
-        public boolean isOwner(Long paymentId, Long userId) {
+        public boolean isOwner(String paymentId, Long userId) {
             return paymentRepository.findById(paymentId)
                     .map(p -> p.getUserId().equals(userId))
                     .orElse(false);

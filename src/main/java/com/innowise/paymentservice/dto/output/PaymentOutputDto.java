@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 public record PaymentOutputDto(
 
-        Long id,
+        String id,
 
         Long orderId,
 
