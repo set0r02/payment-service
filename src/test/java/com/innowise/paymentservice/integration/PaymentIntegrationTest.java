@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -49,6 +50,9 @@ class PaymentIntegrationTest {
 
     private MockMvc mockMvc;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     @BeforeAll
     static void startWireMock() {
         wireMockServer = new WireMockServer(8089);
@@ -63,19 +67,24 @@ class PaymentIntegrationTest {
 
     @BeforeEach
     void setUp() {
+
+        mongoTemplate.getDb().drop();
+
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
                 .apply(springSecurity())
                 .build();
         wireMockServer.resetAll();
 
-        stubFor(get(urlMatching(".*"))
+        stubFor(get(urlMatching("/random"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("2")));
 
     }
+
+
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
