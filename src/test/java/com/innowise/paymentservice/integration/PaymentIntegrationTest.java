@@ -34,6 +34,7 @@ import static org.awaitility.Awaitility.await;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 @SpringBootTest(classes = {
         PaymentServiceApplication.class,
@@ -100,8 +101,6 @@ class PaymentIntegrationTest {
                 .build();
 
     }
-
-
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
