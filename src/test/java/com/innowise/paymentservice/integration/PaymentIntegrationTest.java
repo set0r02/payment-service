@@ -85,6 +85,7 @@ class PaymentIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createPaymentTest() throws Exception {
 
         Jwt jwt = Jwt.withTokenValue("token")
@@ -109,6 +110,7 @@ class PaymentIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void findByIdTest() throws Exception {
 
         MvcResult result = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
@@ -132,7 +134,7 @@ class PaymentIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(roles = "ADMIN")
     void findPaymentsTest() throws Exception {
 
         Jwt jwt = Jwt.withTokenValue("token")
@@ -147,6 +149,7 @@ class PaymentIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void userSummaryTest() throws Exception {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/users/1/summary")
