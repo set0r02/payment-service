@@ -8,6 +8,10 @@ spring:
       - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
       - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
 
+kafka:
+  listener:
+    auto-startup: false
+
 logging:
   level:
     org.springframework.web: TRACE
