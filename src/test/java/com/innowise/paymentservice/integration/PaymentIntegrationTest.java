@@ -83,8 +83,6 @@ class PaymentIntegrationTest {
     @BeforeEach
     void setUp() {
 
-        System.setProperty("app.async.enabled", "false");
-
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
                 .apply(springSecurity())
@@ -118,6 +116,8 @@ class PaymentIntegrationTest {
         registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
         registry.add("app.random-number", () -> "http://localhost:8089/random");
         registry.add("app.kafka.topics.payment-events", () -> "payment-events");
+        registry.add("app.async.enabled", () -> "false");
+        registry.add("spring.kafka.listener.auto-startup", () -> "false");
     }
 
     @Test
@@ -153,11 +153,12 @@ class PaymentIntegrationTest {
 
         System.out.println("CREATE RESPONSE: " + result.getResponse().getContentAsString());
         String body = result.getResponse().getContentAsString();
-        String id = JsonPath.read(body, "$.id");
+        String id = JsonPath.parse(body).read("$.id", String.class);
 
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/" + id)
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN")))
+                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
@@ -166,6 +167,7 @@ class PaymentIntegrationTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
                         .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER")))
+                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
@@ -176,6 +178,7 @@ class PaymentIntegrationTest {
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
+                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
@@ -186,6 +189,7 @@ class PaymentIntegrationTest {
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
+                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 }
