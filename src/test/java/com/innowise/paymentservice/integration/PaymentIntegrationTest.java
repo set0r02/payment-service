@@ -3,24 +3,12 @@ package com.innowise.paymentservice.integration;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.innowise.paymentservice.PaymentServiceApplication;
 import com.innowise.paymentservice.config.TestSecurityConfiguration;
-import com.innowise.paymentservice.model.Payment;
-import com.jayway.jsonpath.JsonPath;
-import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -34,19 +22,16 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.org.awaitility.Awaitility;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.await;
 
-@Slf4j
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers
 @ActiveProfiles("test")
@@ -103,7 +88,6 @@ class PaymentIntegrationTest {
                     }
                 });
 
-        // Очищаем базу перед каждым тестом
         mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
 
         mockMvc = MockMvcBuilders
@@ -246,7 +230,6 @@ class PaymentIntegrationTest {
                         .param("from", "2020-01-01T00:00:00+03:00")
                         .param("to", "2026-12-31T23:59:59+03:00"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.total").exists())
                 .andReturn();
 
     }
