@@ -27,8 +27,10 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -65,23 +67,19 @@ class PaymentIntegrationTest {
 
     @BeforeAll
     static void startWireMock() {
-        wireMockServer = new WireMockServer(8089);
+        wireMockServer = new WireMockServer(0);
         wireMockServer.start();
-        configureFor("localhost", 8089);
+        configureFor("localhost", wireMockServer.port());
     }
-
-
-
-    /*@AfterEach
-    void cleanup() {
-        mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
-    }*/
 
 
     @BeforeEach
     void setUp() {
 
-        mongo.start();
+        mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
+
+        // Сбрасываем WireMock между тестами
+        wireMockServer.resetRequests();
 
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
@@ -147,7 +145,10 @@ class PaymentIntegrationTest {
                     """))
                 .andExpect(MockMvcResultMatchers.status().isAccepted()).andReturn();
 
-        Thread.sleep(300);
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> !mongoTemplate.findAll(Payment.class).isEmpty());
+
         String id = mongoTemplate.findAll(Payment.class)
                 .get(0)
                 .getId();
@@ -172,7 +173,9 @@ class PaymentIntegrationTest {
             """))
                 .andExpect(MockMvcResultMatchers.status().isAccepted());
 
-        Thread.sleep(500);
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> !mongoTemplate.findAll(Payment.class).isEmpty());
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
                         .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER")))
@@ -193,7 +196,9 @@ class PaymentIntegrationTest {
             """))
                 .andExpect(MockMvcResultMatchers.status().isAccepted());
 
-        Thread.sleep(500);
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> !mongoTemplate.findAll(Payment.class).isEmpty());
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/users/1/summary")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
@@ -216,7 +221,9 @@ class PaymentIntegrationTest {
             """))
                 .andExpect(MockMvcResultMatchers.status().isAccepted());;
 
-        Thread.sleep(500);
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .until(() -> !mongoTemplate.findAll(Payment.class).isEmpty());
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/summary")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
