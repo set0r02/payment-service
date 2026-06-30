@@ -78,8 +78,7 @@ class PaymentIntegrationTest {
 
         mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
 
-        // Сбрасываем WireMock между тестами
-        wireMockServer.resetRequests();
+        wireMockServer.resetAll();
 
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
@@ -109,7 +108,7 @@ class PaymentIntegrationTest {
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
-        registry.add("app.random-number", () -> "http://localhost:8089/random");
+        registry.add("app.random-number", () -> "http://localhost:" + wireMockServer.port() + "/random");
         registry.add("app.kafka.topics.payment-events", () -> "payment-events");
         registry.add("app.async.enabled", () -> "false");
         registry.add("spring.kafka.listener.auto-startup", () -> "false");
