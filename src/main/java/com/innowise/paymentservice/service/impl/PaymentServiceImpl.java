@@ -50,13 +50,13 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentAmount(paymentInputDto.paymentAmount())
                 .build();
 
-        Payment savedPayment = paymentRepository.save(payment);
+        payment = paymentRepository.save(payment);
 
         Status newStatus = processPayment();
-        savedPayment.setStatus(newStatus);
-        savedPayment.setTimestamp(LocalDateTime.now());
+        payment.setStatus(newStatus);
+        payment.setTimestamp(LocalDateTime.now());
 
-        Payment updatedPayment = paymentRepository.save(savedPayment);
+        Payment updatedPayment = paymentRepository.save(payment);
 
         PaymentCompletedEvent paymentCompletedEvent = new PaymentCompletedEvent(
                 updatedPayment.getOrderId(),

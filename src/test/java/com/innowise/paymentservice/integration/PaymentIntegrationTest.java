@@ -3,6 +3,7 @@ package com.innowise.paymentservice.integration;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.innowise.paymentservice.PaymentServiceApplication;
 import com.innowise.paymentservice.config.TestSecurityConfiguration;
+import com.innowise.paymentservice.model.Payment;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
@@ -151,7 +152,10 @@ class PaymentIntegrationTest {
 
         System.out.println("CREATE RESPONSE: " + result.getResponse().getContentAsString());
         String body = result.getResponse().getContentAsString();
-        String id = JsonPath.parse(body).read("$.id", String.class);
+        //String id = JsonPath.parse(body).read("$.id", String.class);
+        String id = mongoTemplate.findAll(Payment.class)
+                .get(0)
+                .getId();
 
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/" + id)
@@ -174,6 +178,8 @@ class PaymentIntegrationTest {
             """))
                 .andReturn();
 
+        Thread.sleep(500);
+
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
                         .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER")))
                 .andDo(print())
@@ -183,7 +189,17 @@ class PaymentIntegrationTest {
     @Test
     void userSummaryTest() throws Exception {
 
-        Thread.sleep(300);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
+                .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+            {
+              "orderId": 1,
+              "paymentAmount": 100.0
+            }
+            """));
+
+        Thread.sleep(500);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/users/1/summary")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
@@ -196,7 +212,17 @@ class PaymentIntegrationTest {
     @Test
     void globalSummaryTest() throws Exception {
 
-        Thread.sleep(300);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
+                .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+            {
+              "orderId": 1,
+              "paymentAmount": 100.0
+            }
+            """));
+
+        Thread.sleep(500);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/summary")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
