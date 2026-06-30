@@ -94,7 +94,6 @@ class PaymentIntegrationTest {
                 .webAppContextSetup(context)
                 .apply(springSecurity())
                 .build();
-        wireMockServer.resetAll();
 
         stubFor(get("/random")
                 .willReturn(ok("2")));
