@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
@@ -112,6 +113,10 @@ class PaymentIntegrationTest {
         registry.add("app.kafka.topics.payment-events", () -> "payment-events");
         registry.add("app.async.enabled", () -> "false");
         registry.add("spring.kafka.listener.auto-startup", () -> "false");
+        registry.add("spring.autoconfigure.exclude", () ->
+                "org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration");
     }
 
     @Test
