@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 class PaymentIntegrationTest {
 
     @Container
-    static MongoDBContainer mongo = new MongoDBContainer("mongo:7").withExposedPorts(27017);
+    static MongoDBContainer mongo = new MongoDBContainer("mongo:7");
 
     static WireMockServer wireMockServer;
 
@@ -70,10 +70,10 @@ class PaymentIntegrationTest {
         System.out.println("MONGO URI = " + mongo.getReplicaSetUrl());
     }
 
-    @AfterEach
+    /*@AfterEach
     void cleanup() {
-        mongoTemplate.getDb().drop();
-    }
+        mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
+    }*/
 
     @AfterAll
     static void stopWireMock() {
@@ -89,11 +89,8 @@ class PaymentIntegrationTest {
                 .build();
         wireMockServer.resetAll();
 
-        stubFor(get(urlMatching("/random"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("2")));
+        stubFor(get("/random")
+                .willReturn(ok("2")));
 
         userJwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
@@ -150,6 +147,7 @@ class PaymentIntegrationTest {
                     """))
                 .andReturn();
 
+        Thread.sleep(300);
 
         System.out.println("CREATE RESPONSE: " + result.getResponse().getContentAsString());
         String body = result.getResponse().getContentAsString();
@@ -165,6 +163,17 @@ class PaymentIntegrationTest {
     @Test
     void findPaymentsTest() throws Exception {
 
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
+                        .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+            {
+              "orderId": 1,
+              "paymentAmount": 150.0
+            }
+            """))
+                .andReturn();
+
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
                         .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER")))
                 .andDo(print())
@@ -173,6 +182,8 @@ class PaymentIntegrationTest {
 
     @Test
     void userSummaryTest() throws Exception {
+
+        Thread.sleep(300);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/users/1/summary")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
@@ -184,6 +195,8 @@ class PaymentIntegrationTest {
 
     @Test
     void globalSummaryTest() throws Exception {
+
+        Thread.sleep(300);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/summary")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
