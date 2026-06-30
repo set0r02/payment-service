@@ -19,9 +19,12 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -42,7 +45,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 class PaymentIntegrationTest {
 
     @Container
-    static MongoDBContainer mongo = new MongoDBContainer("mongo:7");
+    static MongoDBContainer mongo = new MongoDBContainer("mongo:7")
+            .waitingFor(Wait.forListeningPort())
+            .withStartupTimeout(java.time.Duration.ofMinutes(2));
 
     static WireMockServer wireMockServer;
 
@@ -65,24 +70,18 @@ class PaymentIntegrationTest {
         configureFor("localhost", 8089);
     }
 
-    @BeforeAll
-    static void debug() {
-        System.out.println("MONGO RUNNING = " + mongo.isRunning());
-        System.out.println("MONGO URI = " + mongo.getReplicaSetUrl());
-    }
+
 
     /*@AfterEach
     void cleanup() {
         mongoTemplate.getCollection("payments").deleteMany(new org.bson.Document());
     }*/
 
-    @AfterAll
-    static void stopWireMock() {
-        wireMockServer.stop();
-    }
 
     @BeforeEach
     void setUp() {
+
+        mongo.start();
 
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
@@ -122,7 +121,7 @@ class PaymentIntegrationTest {
     void createPaymentTest() throws Exception {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
-                        .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(userJwt).authorities(() -> "ROLE_USER"))
+                        .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
             {
@@ -137,7 +136,7 @@ class PaymentIntegrationTest {
     @Test
     void findByIdTest() throws Exception {
 
-        MvcResult result = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/api/payments")
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -146,13 +145,9 @@ class PaymentIntegrationTest {
                       "paymentAmount": 100
                     }
                     """))
-                .andReturn();
+                .andExpect(MockMvcResultMatchers.status().isAccepted()).andReturn();
 
         Thread.sleep(300);
-
-        System.out.println("CREATE RESPONSE: " + result.getResponse().getContentAsString());
-        String body = result.getResponse().getContentAsString();
-        //String id = JsonPath.parse(body).read("$.id", String.class);
         String id = mongoTemplate.findAll(Payment.class)
                 .get(0)
                 .getId();
@@ -160,7 +155,6 @@ class PaymentIntegrationTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/" + id)
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN")))
-                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
@@ -176,13 +170,12 @@ class PaymentIntegrationTest {
               "paymentAmount": 150.0
             }
             """))
-                .andReturn();
+                .andExpect(MockMvcResultMatchers.status().isAccepted());
 
         Thread.sleep(500);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
                         .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER")))
-                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
@@ -197,7 +190,8 @@ class PaymentIntegrationTest {
               "orderId": 1,
               "paymentAmount": 100.0
             }
-            """));
+            """))
+                .andExpect(MockMvcResultMatchers.status().isAccepted());
 
         Thread.sleep(500);
 
@@ -205,7 +199,6 @@ class PaymentIntegrationTest {
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
-                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
@@ -220,7 +213,8 @@ class PaymentIntegrationTest {
               "orderId": 1,
               "paymentAmount": 100.0
             }
-            """));
+            """))
+                .andExpect(MockMvcResultMatchers.status().isAccepted());;
 
         Thread.sleep(500);
 
@@ -228,7 +222,6 @@ class PaymentIntegrationTest {
                         .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
-                .andDo(print())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 }
