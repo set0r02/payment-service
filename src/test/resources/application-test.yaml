@@ -1,5 +1,5 @@
 app:
-  random-number: http://localhost:9561/random
+  random-number: http://localhost:8089/random
 
 logging:
   level:

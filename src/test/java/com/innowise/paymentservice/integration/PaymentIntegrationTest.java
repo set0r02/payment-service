@@ -63,9 +63,9 @@ class PaymentIntegrationTest {
 
     @BeforeAll
     static void startWireMock() {
-        wireMockServer = new WireMockServer(0);
+        wireMockServer = new WireMockServer(8089);
         wireMockServer.start();
-        configureFor("localhost", wireMockServer.port());
+        configureFor("localhost", 8089);
     }
 
     @AfterAll
@@ -105,7 +105,7 @@ class PaymentIntegrationTest {
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
-        registry.add("app.random-number", () -> "http://localhost:" + wireMockServer.port() + "/random");
+        registry.add("app.random-number", () -> "http://localhost:8089/random");
         registry.add("app.kafka.topics.payment-events", () -> "payment-events");
         registry.add("app.async.enabled", () -> "false");
         registry.add("spring.kafka.listener.auto-startup", () -> "false");
