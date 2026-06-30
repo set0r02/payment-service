@@ -19,7 +19,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -42,8 +41,7 @@ class PaymentIntegrationTest {
 
     @Container
     static MongoDBContainer mongo = new MongoDBContainer("mongo:7")
-            .waitingFor(Wait.forListeningPort())
-            .withStartupTimeout(java.time.Duration.ofMinutes(2));
+            .withStartupTimeout(java.time.Duration.ofMinutes(3));
 
     static WireMockServer wireMockServer;
 
