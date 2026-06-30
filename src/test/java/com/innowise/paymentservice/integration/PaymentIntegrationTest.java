@@ -53,6 +53,10 @@ class PaymentIntegrationTest {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    private Jwt userJwt;
+
+    private Jwt adminJwt;
+
     @BeforeAll
     static void startWireMock() {
         wireMockServer = new WireMockServer(8089);
@@ -70,6 +74,8 @@ class PaymentIntegrationTest {
 
         mongoTemplate.getDb().drop();
 
+        System.setProperty("app.async.enabled", "false");
+
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(context)
                 .apply(springSecurity())
@@ -81,6 +87,18 @@ class PaymentIntegrationTest {
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("2")));
+
+        userJwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("1")
+//                .claim("role", "ROLE_USER")
+                .build();
+
+        adminJwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("1")
+//                .claim("role", "ROLE_ADMIN")
+                .build();
 
     }
 
@@ -96,16 +114,8 @@ class PaymentIntegrationTest {
     @Test
     void createPaymentTest() throws Exception {
 
-        Jwt jwt = Jwt.withTokenValue("token")
-                .header("alg", "none")
-                .claim("sub", "1")
-                .claim("role", "ROLE_USER")
-                .build();
-
-
-
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
-                        .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt))
+                        .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(userJwt).authorities(() -> "ROLE_USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
             {
@@ -120,14 +130,8 @@ class PaymentIntegrationTest {
     @Test
     void findByIdTest() throws Exception {
 
-        Jwt jwt = Jwt.withTokenValue("token")
-                .header("alg", "none")
-                .subject("1")
-                .claim("role", "ROLE_ADMIN")
-                .build();
-
         MvcResult result = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/payments")
-                        .with(jwt().jwt(jwt))
+                        .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                     {
@@ -142,35 +146,23 @@ class PaymentIntegrationTest {
 
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/" + id)
-                        .with(jwt().jwt(jwt)))
+                        .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN")))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
     @Test
     void findPaymentsTest() throws Exception {
 
-        Jwt jwt = Jwt.withTokenValue("token")
-                .header("alg", "none")
-                .claim("sub", "1")
-                .claim("role", "ROLE_USER")
-                .build();
-
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments")
-                        .with(jwt().jwt(jwt)))
+                        .with(jwt().jwt(userJwt).authorities(() -> "ROLE_USER")))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
     @Test
     void userSummaryTest() throws Exception {
 
-        Jwt jwt = Jwt.withTokenValue("token")
-                .header("alg", "none")
-                .subject("1")
-                .claim("role", "ROLE_ADMIN")
-                .build();
-
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/users/1/summary")
-                        .with(jwt().jwt(jwt))
+                        .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
@@ -179,14 +171,8 @@ class PaymentIntegrationTest {
     @Test
     void globalSummaryTest() throws Exception {
 
-        Jwt jwt = Jwt.withTokenValue("token")
-                .header("alg", "none")
-                .subject("1")
-                .claim("role", "ROLE_ADMIN")
-                .build();
-
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/payments/summary")
-                        .with(jwt().jwt(jwt))
+                        .with(jwt().jwt(adminJwt).authorities(() -> "ROLE_ADMIN"))
                         .param("from", "2026-01-01T00:00:00")
                         .param("to", "2026-12-31T23:59:59"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
