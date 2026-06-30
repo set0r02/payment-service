@@ -41,7 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 class PaymentIntegrationTest {
 
     @Container
-    static MongoDBContainer mongo = new MongoDBContainer("mongo:7").withReuse(true);;
+    static MongoDBContainer mongo = new MongoDBContainer("mongo:7")
+            .waitingFor(org.testcontainers.containers.wait.strategy.Wait.forListeningPort());;
 
     static WireMockServer wireMockServer;
 
@@ -64,6 +65,11 @@ class PaymentIntegrationTest {
         configureFor("localhost", 8089);
     }
 
+    @AfterEach
+    void cleanup() {
+        mongoTemplate.getDb().drop();
+    }
+
     @AfterAll
     static void stopWireMock() {
         wireMockServer.stop();
@@ -71,8 +77,6 @@ class PaymentIntegrationTest {
 
     @BeforeEach
     void setUp() {
-
-        mongoTemplate.getDb().drop();
 
         System.setProperty("app.async.enabled", "false");
 
