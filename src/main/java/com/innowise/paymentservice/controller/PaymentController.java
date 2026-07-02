@@ -40,7 +40,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isOwner(#id, authentication.principal.subject)")
+    @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isOwner(#id, T(Long).valueOf(authentication.principal.subject))")
     public ResponseEntity<PaymentOutputDto> findById(@PathVariable String id) {
         return ResponseEntity.ok(paymentService.findById(id));
     }
@@ -63,7 +63,7 @@ public class PaymentController {
     }
 
     @GetMapping("/users/{userId}/summary")
-    @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isOwner(#userId, authentication.principal.subject)")
+    @PreAuthorize("hasRole('ADMIN') or @paymentSecurity.isSelf(#userId, authentication.principal.subject)")
     public ResponseEntity<PaymentSummaryResponse> getUserSummary(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,

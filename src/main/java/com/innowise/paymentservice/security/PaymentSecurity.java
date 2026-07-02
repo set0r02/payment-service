@@ -15,4 +15,8 @@
                     .map(p -> p.getUserId().equals(userId))
                     .orElse(false);
         }
+
+        public boolean isSelf(Long userId, String subject) {
+            return userId.equals(Long.valueOf(subject));
+        }
     }
