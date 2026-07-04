@@ -21,6 +21,7 @@ import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,22 +53,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentAmount(paymentInputDto.paymentAmount())
                 .build();
 
-        payment = paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
 
-        Status newStatus = processPayment();
-        payment.setStatus(newStatus);
-        payment.setTimestamp(LocalDateTime.now());
+        processPaymentAsync(savedPayment.getId());
 
-        Payment updatedPayment = paymentRepository.save(payment);
-
-        PaymentCompletedEvent paymentCompletedEvent = new PaymentCompletedEvent(
-                updatedPayment.getOrderId(),
-                updatedPayment.getStatus().name()
-        );
-
-        kafkaTemplate.send(kafkaTopicsProperties.paymentEvents(),paymentCompletedEvent);
-
-        return paymentMapper.toDto(updatedPayment);
+        return paymentMapper.toDto(savedPayment);
     }
 
     @Override
@@ -126,25 +116,6 @@ public class PaymentServiceImpl implements PaymentService {
         return new PaymentSummaryResponse(total);
     }
 
-/*    private List<Payment> findPaymentWithCriteria(Long userId, Long orderId, Status status) {
-
-        Query query = new Query();
-
-        if (userId != null) {
-            query.addCriteria(Criteria.where("userId").is(userId));
-        }
-
-        if (orderId != null) {
-            query.addCriteria(Criteria.where("orderId").is(orderId));
-        }
-
-        if (status != null) {
-            query.addCriteria(Criteria.where("status").is(status));
-        }
-
-        return mongoTemplate.find(query, Payment.class);
-    }*/
-
     private Status processPayment() {
 
         int number = Integer.parseInt(randomNumberClient.getRandomNumber().trim());
@@ -152,6 +123,28 @@ public class PaymentServiceImpl implements PaymentService {
         return (number % 2 == 0)
                 ? Status.SUCCESS
                 : Status.FAILED;
+    }
+
+    @Async
+    public void processPaymentAsync(String id) {
+
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow();
+
+        Status newStatus = processPayment();
+
+        payment.setStatus(newStatus);
+        payment.setTimestamp(LocalDateTime.now());
+
+        Payment updated = paymentRepository.save(payment);
+
+        kafkaTemplate.send(
+                kafkaTopicsProperties.paymentEvents(),
+                new PaymentCompletedEvent(
+                        updated.getOrderId(),
+                        updated.getStatus().name()
+                )
+        );
     }
 
     private Aggregation buildSummaryAggregation(Long userId, LocalDateTime from, LocalDateTime to) {
@@ -179,5 +172,4 @@ public class PaymentServiceImpl implements PaymentService {
                         .as("total")
         );
     }
-
 }
