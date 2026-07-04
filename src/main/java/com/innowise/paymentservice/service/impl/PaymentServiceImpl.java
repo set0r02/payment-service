@@ -21,6 +21,7 @@ import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,9 +80,15 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<PaymentOutputDto> findPayments(Long orderId, Status status, Long userId) {
+    public List<PaymentOutputDto> findPayments(Long orderId, Status status, Authentication authentication) {
 
-        return findPaymentWithCriteria(userId, orderId, status)
+        Long userId = Long.valueOf(authentication.getName());
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        Long effectiveUserId = isAdmin ? null : userId;
+
+        return paymentRepository.findByCriteria(effectiveUserId, orderId, status)
                 .stream()
                 .map(paymentMapper::toDto)
                 .toList();
@@ -91,18 +98,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentSummaryResponse getUserSummary(Long userId, LocalDateTime from, LocalDateTime to) {
 
-        Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(
-                        Criteria.where("user_id").is(userId)
-                        .and("status").is(Status.SUCCESS)
-                        .and("timestamp").gte(from).lte(to)
-                ),
-                Aggregation.addFields()
-                        .addFieldWithValue("payment_amount_decimal",
-                                ConvertOperators.Convert.convertValue("$payment_amount").to("double"))
-                        .build(),
-                Aggregation.group().sum("payment_amount_decimal").as("total")
-        );
+        Aggregation aggregation = buildSummaryAggregation(userId, from, to);
 
         return getPaymentSummaryResponse(aggregation);
     }
@@ -110,18 +106,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentSummaryResponse getGlobalSummary(LocalDateTime from,
                                                LocalDateTime to) {
 
-        Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(
-                        Criteria.where("status").is(Status.SUCCESS)
-                                .and("timestamp").gte(from).lte(to)
-                ),
-                Aggregation.addFields()
-                        .addFieldWithValue("payment_amount_decimal",
-                                ConvertOperators.Convert.convertValue("$payment_amount").to("decimal"))
-                        .build(),
-                Aggregation.group().sum("payment_amount_decimal").as("total")
-        );
-
+        Aggregation aggregation = buildSummaryAggregation(null, from, to);
 
         return getPaymentSummaryResponse(aggregation);
     }
@@ -132,14 +117,16 @@ public class PaymentServiceImpl implements PaymentService {
 
         Document doc = result.getUniqueMappedResult();
 
-        BigDecimal total = (doc == null || doc.get("total") == null)
-                ? BigDecimal.ZERO
-                : new BigDecimal(doc.get("total").toString());
+        BigDecimal total = BigDecimal.ZERO;
+
+        if (doc != null && doc.get("total") != null) {
+            total = new BigDecimal(doc.get("total").toString());
+        }
 
         return new PaymentSummaryResponse(total);
     }
 
-    private List<Payment> findPaymentWithCriteria(Long userId, Long orderId, Status status) {
+/*    private List<Payment> findPaymentWithCriteria(Long userId, Long orderId, Status status) {
 
         Query query = new Query();
 
@@ -156,7 +143,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         return mongoTemplate.find(query, Payment.class);
-    }
+    }*/
 
     private Status processPayment() {
 
@@ -165,6 +152,32 @@ public class PaymentServiceImpl implements PaymentService {
         return (number % 2 == 0)
                 ? Status.SUCCESS
                 : Status.FAILED;
+    }
+
+    private Aggregation buildSummaryAggregation(Long userId, LocalDateTime from, LocalDateTime to) {
+
+        Criteria criteria = Criteria.where("status").is(Status.SUCCESS)
+                .and("timestamp").gte(from).lte(to);
+
+        if (userId != null) {
+            criteria = criteria.and("user_id").is(userId);
+        }
+
+        return Aggregation.newAggregation(
+
+                Aggregation.match(criteria),
+
+                Aggregation.addFields()
+                        .addFieldWithValue(
+                                "payment_amount_decimal",
+                                ConvertOperators.Convert.convertValue("$payment_amount").to("decimal")
+                        )
+                        .build(),
+
+                Aggregation.group()
+                        .sum("payment_amount_decimal")
+                        .as("total")
+        );
     }
 
 }

@@ -22,6 +22,8 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -115,6 +117,10 @@ public class PaymentServiceTest {
                 .paymentAmount(BigDecimal.valueOf(100))
                 .build();
 
+        Authentication authentication = mock(Authentication.class);
+
+        when(authentication.getName()).thenReturn("1");
+
         when(mongoTemplate.find(
                 any(Query.class),
                 eq(Payment.class)
@@ -123,7 +129,7 @@ public class PaymentServiceTest {
         when(paymentMapper.toDto(any()))
                 .thenReturn(mock(PaymentOutputDto.class));
 
-        var result = paymentService.findPayments(1L, Status.SUCCESS, 1L);
+        var result = paymentService.findPayments(1L, Status.SUCCESS, authentication);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());

@@ -1,11 +1,12 @@
 package com.innowise.paymentservice.repository;
 
 import com.innowise.paymentservice.model.Payment;
+import com.innowise.paymentservice.repository.custom.PaymentRepositoryCustom;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 
 @Repository
-public interface PaymentRepository extends MongoRepository<Payment,String>{
+public interface PaymentRepository extends MongoRepository<Payment,String>, PaymentRepositoryCustom {
 
 }

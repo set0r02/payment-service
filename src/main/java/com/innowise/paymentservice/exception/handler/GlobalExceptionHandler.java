@@ -1,6 +1,7 @@
 package com.innowise.paymentservice.exception.handler;
 
 import com.innowise.paymentservice.exception.NotFoundException;
+import com.mongodb.DuplicateKeyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -69,6 +70,19 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
                         "Internal server error",
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateKey(DuplicateKeyException ex) {
+
+        log.warn("Duplicate key violation: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(
+                        HttpStatus.CONFLICT.value(),
+                        "Duplicate resource: order already exists or has been processed",
                         Instant.now()
                 ));
     }
