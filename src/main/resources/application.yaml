@@ -10,7 +10,7 @@ spring:
       uri: ${MONGO_DB_URI:mongodb://localhost:27017/paymentdb}
 
   kafka:
-    bootstrap-servers: ${BOOTSTRAP_SERVICES:localhost:9092}
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: payment-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
