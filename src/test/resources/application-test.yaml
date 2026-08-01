@@ -1,0 +1,9 @@
+app:
+  random-number: http://localhost:8089/random
+
+logging:
+  level:
+    org.springframework.web: TRACE
+    org.springframework.test: DEBUG
+    org.springframework.data: DEBUG
+    com.innowise: DEBUG
