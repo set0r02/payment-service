@@ -1,9 +1,6 @@
 package com.innowise.paymentservice.service.impl;
 
-import com.innowise.paymentservice.client.RandomNumberClient;
-import com.innowise.paymentservice.config.kafka.properties.KafkaTopicsProperties;
 import com.innowise.paymentservice.dto.PaymentSummaryResponse;
-import com.innowise.paymentservice.dto.event.PaymentCompletedEvent;
 import com.innowise.paymentservice.dto.input.PaymentInputDto;
 import com.innowise.paymentservice.dto.output.PaymentOutputDto;
 import com.innowise.paymentservice.exception.NotFoundException;
@@ -11,6 +8,7 @@ import com.innowise.paymentservice.mapper.PaymentMapper;
 import com.innowise.paymentservice.model.Payment;
 import com.innowise.paymentservice.model.Status;
 import com.innowise.paymentservice.repository.PaymentRepository;
+import com.innowise.paymentservice.service.PaymentProcessingService;
 import com.innowise.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
@@ -19,9 +17,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,10 +32,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final PaymentProcessingService paymentProcessingService;
     private final MongoTemplate mongoTemplate;
-    private final KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
-    private final KafkaTopicsProperties kafkaTopicsProperties;
-    private final RandomNumberClient randomNumberClient;
 
     @Override
     public PaymentOutputDto createPayment(PaymentInputDto paymentInputDto, Long userId) {
@@ -55,7 +48,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment savedPayment = paymentRepository.save(payment);
 
-        processPaymentAsync(savedPayment.getId());
+        paymentProcessingService.processPayment(savedPayment.getId());
 
         return paymentMapper.toDto(savedPayment);
     }
@@ -114,37 +107,6 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         return new PaymentSummaryResponse(total);
-    }
-
-    private Status processPayment() {
-
-        int number = Integer.parseInt(randomNumberClient.getRandomNumber().trim());
-
-        return (number % 2 == 0)
-                ? Status.SUCCESS
-                : Status.FAILED;
-    }
-
-    @Async
-    public void processPaymentAsync(String id) {
-
-        Payment payment = paymentRepository.findById(id)
-                .orElseThrow();
-
-        Status newStatus = processPayment();
-
-        payment.setStatus(newStatus);
-        payment.setTimestamp(LocalDateTime.now());
-
-        Payment updated = paymentRepository.save(payment);
-
-        kafkaTemplate.send(
-                kafkaTopicsProperties.paymentEvents(),
-                new PaymentCompletedEvent(
-                        updated.getOrderId(),
-                        updated.getStatus().name()
-                )
-        );
     }
 
     private Aggregation buildSummaryAggregation(Long userId, LocalDateTime from, LocalDateTime to) {
